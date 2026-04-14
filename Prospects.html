@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Action</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+    .field {
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    .field-label {
+      color: #666;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+    .field-value {
+      color: #111;
+    }
+    .field-value.empty {
+      color: #aaa;
+      font-style: italic;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 16px 0;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    .success { color: #2e7d32; }
+    .error   { color: #c62828; }
+  </style>
+</head>
+<body>
+
+  <div class="field">
+    <div class="field-label">Account Custom Field 4</div>
+    <div class="field-value" id="csf4"></div>
+  </div>
+  <div class="field">
+    <div class="field-label">Account Custom Field 5</div>
+    <div class="field-value" id="csf5"></div>
+  </div>
+
+  <hr>
+
+  <button id="btn">Pull the latest generative insights for the account.</button>
+  <div id="status"></div>
+
+  <script>
+    // Outreach passes context as URL params.
+    // The manifest requests acc.id, acc.name, acc.csf4, acc.csf5 via the context array.
+    const params    = new URLSearchParams(window.location.search);
+    const accountId = params.get('acc.id');
+    const csf4      = params.get('acc.csf4');
+    const csf5      = params.get('acc.csf5');
+
+    // ↓ Replace with your actual REST endpoint
+    const TARGET_URL = 'https://your-api.example.com/trigger';
+
+    function renderField(elementId, value) {
+      const el = document.getElementById(elementId);
+      if (value) {
+        el.textContent = value;
+      } else {
+        el.textContent = '—';
+        el.classList.add('empty');
+      }
+    }
+
+    renderField('csf4', csf4);
+    renderField('csf5', csf5);
+
+    const btn    = document.getElementById('btn');
+    const status = document.getElementById('status');
+
+    btn.addEventListener('click', async () => {
+      btn.disabled       = true;
+      status.textContent = '';
+      status.className   = '';
+
+      try {
+        const resp = await fetch(TARGET_URL, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ account_id: accountId }),
+        });
+
+        if (resp.ok) {
+          status.textContent = '✓ Success!';
+          status.className   = 'success';
+        } else {
+          const text = await resp.text();
+          status.textContent = `✗ Error ${resp.status}: ${text}`;
+          status.className   = 'error';
+        }
+      } catch (err) {
+        status.textContent = `✗ Network error: ${err.message}`;
+        status.className   = 'error';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
