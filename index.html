@@ -31,40 +31,19 @@
   </style>
 </head>
 <body>
-  <button id="btn" disabled>Loading...</button>
+  <button id="btn">Run Action</button>
   <div id="status"></div>
 
-  <script type="module">
-    // Outreach extensibility SDK — receives account context via postMessage
-    import sdk from 'https://cdn.jsdelivr.net/npm/@getoutreach/extensibility-sdk/dist/index.min.js';
+  <script>
+    // Outreach passes context as URL params: ?acc.id=1664&acc.name=Acme&theme=Light&loc=en
+    const params    = new URLSearchParams(window.location.search);
+    const accountId = params.get('acc.id');
 
     // ↓ Replace with your actual REST endpoint
     const TARGET_URL = 'https://your-api.example.com/trigger';
 
     const btn    = document.getElementById('btn');
     const status = document.getElementById('status');
-
-    let accountId, accountName;
-
-    // Initialize: Outreach passes account context after the SDK handshake.
-    // Falls back after 3 s so the button works when opened outside Outreach (local dev).
-    const sdkTimeout = new Promise(resolve => setTimeout(resolve, 3000));
-
-    Promise.race([sdk.init(), sdkTimeout]).then(ctx => {
-      accountId   = ctx?.account?.id   ?? null;
-      accountName = ctx?.account?.name ?? null;
-      btn.textContent = 'Run Action';
-      btn.disabled    = false;
-      if (!accountId) {
-        status.textContent = '(no Outreach context — account ID will be null)';
-        status.className   = '';
-      }
-    }).catch(() => {
-      btn.textContent = 'Run Action';
-      btn.disabled    = false;
-      status.textContent = 'Could not load account context.';
-      status.className   = 'error';
-    });
 
     btn.addEventListener('click', async () => {
       btn.disabled       = true;
@@ -75,7 +54,7 @@
         const resp = await fetch(TARGET_URL, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ account_id: accountId, account_name: accountName }),
+          body:    JSON.stringify({ account_id: accountId }),
         });
 
         if (resp.ok) {
